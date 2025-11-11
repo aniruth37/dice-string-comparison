@@ -1,0 +1,43 @@
+{
+    "name": "dice-string-comparison",
+    "version": "1.0.0",
+    "description": "Dice coefficient string similarity with adaptive n-grams, array scoring, and TypeScript support.",
+    "main": "dist/dice.cjs",
+    "module": "dist/dice.js",
+    "types": "dist/dice.d.ts",
+    "exports": {
+        ".": {
+            "require": "./dist/dice.cjs",
+            "import": "./dist/dice.js"
+        }
+    },
+    "files": [
+        "dist"
+    ],
+    "scripts": {
+        "build": "tsup",
+        "prepublishOnly": "npm run build",
+        "test": "echo \"Error: no test specified\" && exit 1"
+    },
+    "repository": {
+        "type": "git",
+        "url": "git+https://github.com/aniruth37/dice-string-comparison.git"
+    },
+    "keywords": [
+        "dice",
+        "string-similarity",
+        "fuzzy-search",
+        "fast",
+        "string",
+        "string-comparison",
+        "similarity",
+        "typescript"
+    ],
+    "author": "Aniruth V T",
+    "license": "MIT",
+    "devDependencies": {
+        "@types/node": "^24.10.0",
+        "tsup": "^8.5.0",
+        "typescript": "^5.9.3"
+    }
+}
