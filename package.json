@@ -1,6 +1,6 @@
 {
     "name": "dice-string-comparison",
-    "version": "1.0.1",
+    "version": "1.0.2",
     "description": "Dice coefficient string similarity with adaptive n-grams, array scoring, and TypeScript support.",
     "main": "dist/dice.cjs",
     "module": "dist/dice.js",

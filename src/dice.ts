@@ -14,7 +14,7 @@ export function diceCoefficient(str1: string, str2: string): number {
   if (!str1.length || !str2.length) return 0;
 
   const avgLen = (str1.length + str2.length) / 2;
-  const n = avgLen <= 8 ? 2 : avgLen <= 15 ? 3 : 4;
+  const n = avgLen <= 15 ? 2 : avgLen <= 30 ? 3 : 4;
 
   const len1 = str1.length - n + 1;
   const len2 = str2.length - n + 1;
@@ -55,7 +55,7 @@ export function diceCoefficient(str1: string, str2: string): number {
 export function diceCoefficientArray(str: string, arr: string[]): DiceMatch[] {
   str = str.toLowerCase().trim();
   const avgLen = str.length;
-  const n = avgLen <= 8 ? 2 : avgLen <= 15 ? 3 : 4;
+  const n = avgLen <= 15 ? 2 : avgLen <= 30 ? 3 : 4;
   const lenStr = str.length - n + 1;
   if (lenStr <= 0) return arr.map(item => ({ item, score: 0 }));
 
@@ -101,10 +101,11 @@ export function diceCoefficientArray(str: string, arr: string[]): DiceMatch[] {
 export function diceCoefficientTopMatches(
   str: string,
   arr: string[],
-  topN: number = 5,
+  topN: number = 0,
   cutoff: number = 0
 ): DiceMatch[] {
   const results = diceCoefficientArray(str, arr);
+  if (!topN) topN = results.length;
   return results
     .filter(r => r.score >= cutoff)
     .sort((a, b) => b.score - a.score)
