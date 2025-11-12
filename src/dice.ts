@@ -3,6 +3,35 @@ export interface DiceMatch {
   score: number;
 }
 
+const BASE = 131 >>> 0;
+
+const getNGramCounts = (s: string, nGram: number): Map<number, number> => {
+  const m = new Map<number, number>();
+  if (nGram <= 0 || s.length < nGram) return m;
+
+  // compute base^(n-1)
+  let pow = 1 >>> 0;
+  for (let i = 0; i < nGram - 1; i++) pow = (pow * BASE) >>> 0;
+
+  // initial hash: weighted by BASE^(n-1-i)
+  let h = 0 >>> 0;
+  for (let i = 0; i < nGram; i++) {
+    h = (h * BASE + s.charCodeAt(i)) >>> 0;
+  }
+  m.set(h, (m.get(h) || 0) + 1);
+
+  for (let i = nGram; i < s.length; i++) {
+    const out = s.charCodeAt(i - nGram);
+    const ino = s.charCodeAt(i);
+    // remove outgoing, multiply, add incoming
+    h =
+      (((h + 0x100000000 - ((out * pow) % 0x100000000)) >>> 0) * BASE + ino) >>>
+      0;
+    m.set(h, (m.get(h) || 0) + 1);
+  }
+  return m;
+};
+
 /**
  * Dice Coefficient between two strings.
  * Uses adaptive n-gram size based on string length.
@@ -20,28 +49,41 @@ export function diceCoefficient(str1: string, str2: string): number {
   const len2 = str2.length - n + 1;
   if (len1 <= 0 || len2 <= 0) return 0;
 
-  const hash = (s: string): number => {
-    let h = 0;
-    for (let i = 0; i < s.length; i++) {
-      h = (h << 5) - h + s.charCodeAt(i);
-      h |= 0;
-    }
-    return h;
-  };
+  const counts1 = getNGramCounts(str1, n);
 
-  const counts = new Map<number, number>();
-  for (let i = 0; i < len1; i++) {
-    const h = hash(str1.slice(i, i + n));
-    counts.set(h, (counts.get(h) || 0) + 1);
-  }
-
+  // Instead of cloning counts1, track per-hash matches for str2 to avoid overcounting.
   let intersection = 0;
-  for (let i = 0; i < len2; i++) {
-    const h = hash(str2.slice(i, i + n));
-    const c = counts.get(h);
-    if (c) {
-      counts.set(h, c - 1);
-      intersection++;
+  if (len2 > 0) {
+    // rolling hash over str2
+    let pow = 1 >>> 0;
+    for (let i = 0; i < n - 1; i++) pow = (pow * BASE) >>> 0;
+
+    let h = 0 >>> 0;
+    for (let i = 0; i < n; i++) h = (h * BASE + str2.charCodeAt(i)) >>> 0;
+
+    const matched = new Map<number, number>();
+    const avail = counts1.get(h) || 0;
+    if (matched.get(h) || 0 < avail) {
+      const prev = matched.get(h) || 0;
+      if (prev < avail) {
+        matched.set(h, prev + 1);
+        intersection++;
+      }
+    }
+
+    for (let i = n; i < str2.length; i++) {
+      const out = str2.charCodeAt(i - n);
+      const ino = str2.charCodeAt(i);
+      h =
+        (((h + 0x100000000 - ((out * pow) % 0x100000000)) >>> 0) * BASE +
+          ino) >>>
+        0;
+      const available = counts1.get(h) || 0;
+      const prevMatched = matched.get(h) || 0;
+      if (prevMatched < available) {
+        matched.set(h, prevMatched + 1);
+        intersection++;
+      }
     }
   }
 
@@ -54,39 +96,43 @@ export function diceCoefficient(str1: string, str2: string): number {
  */
 export function diceCoefficientArray(str: string, arr: string[]): DiceMatch[] {
   str = str.toLowerCase().trim();
-  const avgLen = str.length;
-  const n = avgLen <= 15 ? 2 : avgLen <= 30 ? 3 : 4;
+  const n = str.length <= 15 ? 2 : str.length <= 30 ? 3 : 4;
   const lenStr = str.length - n + 1;
-  if (lenStr <= 0) return arr.map(item => ({ item, score: 0 }));
+  if (lenStr <= 0) return arr.map((item) => ({ item, score: 0 }));
 
-  const hash = (s: string): number => {
-    let h = 0;
-    for (let i = 0; i < s.length; i++) {
-      h = (h << 5) - h + s.charCodeAt(i);
-      h |= 0;
-    }
-    return h;
-  };
+  const countsStr = getNGramCounts(str, n);
 
-  const countsStr = new Map<number, number>();
-  for (let i = 0; i < lenStr; i++) {
-    const h = hash(str.slice(i, i + n));
-    countsStr.set(h, (countsStr.get(h) || 0) + 1);
-  }
-
-  return arr.map(item => {
+  return arr.map((item) => {
     const s = item.toLowerCase().trim();
     const lenItem = s.length - n + 1;
     if (lenItem <= 0) return { item, score: 0 };
 
-    const counts = new Map(countsStr);
+    // walk item n-grams with rolling hash and track matched counts to avoid copying countsStr
     let intersection = 0;
+    let pow = 1 >>> 0;
+    for (let i = 0; i < n - 1; i++) pow = (pow * BASE) >>> 0;
 
-    for (let i = 0; i < lenItem; i++) {
-      const h = hash(s.slice(i, i + n));
-      const c = counts.get(h);
-      if (c) {
-        counts.set(h, c - 1);
+    let h = 0 >>> 0;
+    for (let i = 0; i < n; i++) h = (h * BASE + s.charCodeAt(i)) >>> 0;
+
+    const matched = new Map<number, number>();
+    const avail0 = countsStr.get(h) || 0;
+    if ((matched.get(h) || 0) < avail0) {
+      matched.set(h, (matched.get(h) || 0) + 1);
+      intersection++;
+    }
+
+    for (let i = n; i < s.length; i++) {
+      const out = s.charCodeAt(i - n);
+      const ino = s.charCodeAt(i);
+      h =
+        (((h + 0x100000000 - ((out * pow) % 0x100000000)) >>> 0) * BASE +
+          ino) >>>
+        0;
+      const avail = countsStr.get(h) || 0;
+      const prev = matched.get(h) || 0;
+      if (prev < avail) {
+        matched.set(h, prev + 1);
         intersection++;
       }
     }
@@ -107,7 +153,7 @@ export function diceCoefficientTopMatches(
   const results = diceCoefficientArray(str, arr);
   if (!topN) topN = results.length;
   return results
-    .filter(r => r.score >= cutoff)
+    .filter((r) => r.score >= cutoff)
     .sort((a, b) => b.score - a.score)
     .slice(0, topN);
 }

@@ -1,11 +1,13 @@
 # Dice String Comparison
 
-This package provides an implementation of the Dice Coefficient algorithm, which is useful for measuring the similarity between two strings. It includes functions to compute the Dice Coefficient between two strings, as well as to find the top matches from an array of strings.
+This package provides a fast implementation of the Dice Coefficient algorithm, which is useful for measuring the similarity between two strings. It includes functions to compute the Dice Coefficient between two strings, as well as to find the top matches from an array of strings.
+
+This is the fastest implementation for matching an array of strings.
 
 ## Features
 
 - Extremely fast Dice Coefficient calculation
-- Optimized for comparing a string against large arrays
+- **Optimized for comparing a string against large arrays**
 - Returns top-N matches with optional cutoff
 - Fully typed for TypeScript
 - Works with both ESM and CommonJS
@@ -95,14 +97,14 @@ console.log(topMatches);
 
 ## Performance
 
-Benchmark for 100 samples
+Benchmark for 1000 samples
 
-| Function                            | Ops/sec |
-| ----------------------------------- | ------- |
-| diceCoefficient                     | 2076    |
-| string-similarity.compareTwoStrings | 1182    |
-| diceCoefficientArray                | 192     |
-| string-similarity.findBestMatch     | 113     |
+| Function                            | Ops/sec  |
+| ----------------------------------- | -------- |
+| **diceCoefficient**                 | 845      |
+| **diceCoefficientArray**            | **3385** |
+| string-similarity.compareTwoStrings | 554      |
+| string-similarity.findBestMatch     | 550      |
 
 ## License
 
